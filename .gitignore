@@ -1,0 +1,9 @@
+data
+imitation
+models
+src/__pycache__
+src/training_testing/__pycache__
+src/training_testing/models
+*.npy
+*.pyc
+*.h5

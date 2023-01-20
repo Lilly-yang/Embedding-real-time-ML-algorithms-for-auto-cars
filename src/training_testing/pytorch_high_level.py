@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from time import sleep
 
 GPU = True
 if torch.cuda.is_available():
@@ -46,6 +47,7 @@ def fit(net,X,Y,train_log,optimizer,loss_function,validation_set,BATCH_SIZE,EPOC
 
     for epochs in range(EPOCHS):
         print('epoch ', epochs)
+        sleep(0.1)
         #insample data
         train_average_loss = 0
         val_average_loss = 0
@@ -109,6 +111,81 @@ def fit(net,X,Y,train_log,optimizer,loss_function,validation_set,BATCH_SIZE,EPOC
             break
 
     return train_log       
+
+
+def fit_dataloader(net,DL_train, DL_val, train_log,EPOCHS,model_name):
+    early_stopping = EarlyStopping()
+
+    for epochs in range(EPOCHS):
+        print('epoch ', epochs)
+
+        #insample data
+        train_average_loss = 0
+        val_average_loss = 0
+        train_counter = 0
+        val_counter = 0
+
+        optimizer = optim.Adam(net.parameters(),lr = 0.001)
+        loss_function = nn.MSELoss()
+
+        for (i, batch) in enumerate(DL_train):
+            # print("\nBatch = " + str(i))
+            batch_X = batch['predictors']  # [3,7]
+            batch_Y = batch['political']  # [3]
+
+            train_loss = fwd_pass(net,batch_X,batch_Y,optimizer,loss_function,train=True)
+            del batch_X
+            del batch_Y
+
+            if i%100==0:
+                train_average_loss += float(train_loss.cpu())
+                train_counter += 1
+
+            del train_loss
+
+        #outsample data
+        del optimizer, loss_function
+        torch.cuda.empty_cache()
+
+        optimizer = optim.Adam(net.parameters(), lr=0.001)
+        loss_function = nn.MSELoss()
+
+        for (i, batch) in enumerate(DL_val):
+            # print("\nBatch = " + str(i))
+            batch_X = batch['predictors']  # [3,7]
+            batch_Y = batch['political']  # [3]
+
+            val_loss = fwd_pass(net,batch_X,batch_Y,optimizer,loss_function,train=False)
+            del batch_X
+            del batch_Y
+
+            if i%10==0:
+                val_average_loss += float(val_loss.cpu())
+                val_counter += 1
+
+            del val_loss
+            # print('val loss: ',float(val_loss))
+
+        torch.cuda.empty_cache()
+        if(train_counter==0):
+            train_counter = 1
+        if(val_counter ==0):
+            val_counter = 1
+        train_log.append([train_average_loss/train_counter,val_average_loss/val_counter]) # just store the last values for now
+
+        del optimizer, loss_function
+        torch.cuda.empty_cache()
+
+        state = {'net': net}
+        torch.save(state, model_name, _use_new_zipfile_serialization=False)
+
+        print('train loss = ', train_average_loss/train_counter)
+        print('val loss = ', val_average_loss/val_counter)
+        early_stopping(val_average_loss/val_counter)
+        if early_stopping.early_stop:
+            break
+
+    return train_log
 
 
 class EarlyStopping():

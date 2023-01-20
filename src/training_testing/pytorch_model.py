@@ -6,15 +6,12 @@ import torch.optim as optim
 
 class Net(nn.Module):
     def __init__(self,HEIGHT,WIDTH,CHANNELS):
-        # in python3
-        # super().__init__()
-        # in python2
-        super(Net, self).__init__()
+        # super().__init__()    # in python3
+        super(Net, self).__init__() # in python2
 
-        self.conv_layers = nn.Sequential(
-            # input is batch_size x 3 x 66 x 200
-            nn.BatchNorm2d(1),
-            nn.Conv2d(1, 64, 3, stride=1, bias=False),
+        self.conv_layers = nn.Sequential(   # input is batch_size x channel x height x width
+            nn.BatchNorm2d(CHANNELS),
+            nn.Conv2d(CHANNELS, 64, 3, bias=False),
             nn.ELU(),
             nn.MaxPool2d(2),
             nn.Dropout(p=0.5),
@@ -31,9 +28,33 @@ class Net(nn.Module):
             nn.MaxPool2d(2),
             nn.Dropout(p=0.5)
         )
-        x = torch.randn(CHANNELS,HEIGHT,WIDTH).view(-1,CHANNELS,HEIGHT,WIDTH)
+
+        # self.conv3d_layers = nn.Sequential(
+        #     # input is batch_size x 3 x 66 x 200
+        #     nn.BatchNorm3d(1),
+        #     nn.Conv2d(CHANNELS, 64, 3, stride=1, bias=False),
+        #     nn.ELU(),
+        #     nn.MaxPool3d(2),
+        #     nn.Dropout(p=0.5),
+        #
+        #     nn.Conv3d(64, 32, 3, stride=1, bias=False),
+        #     nn.ELU(),
+        #     nn.MaxPool3d(2),
+        #
+        #     nn.Conv3d(32, 16, 3, stride=1, bias=False),
+        #     nn.ELU(),
+        #
+        #     nn.Conv3d(16, 8, 3, stride=1, bias=False),
+        #     nn.ELU(),
+        #     nn.MaxPool3d(2),
+        #     nn.Dropout(p=0.5)
+        # )
+
+        x = torch.randn(CHANNELS,HEIGHT,WIDTH).view(-1,CHANNELS,HEIGHT,WIDTH) # initialization
+
         self._to_linear = None
         self.convs(x)
+
         self.dense_layers = nn.Sequential(
             nn.Linear(self._to_linear,128),
             nn.ELU(),
@@ -45,7 +66,7 @@ class Net(nn.Module):
             nn.Linear(64,32),
             nn.ELU(),
 
-            nn.Linear(32, 15),
+            nn.Linear(32, 5),
         )
     def convs(self, x):
         x = self.conv_layers(x)
@@ -54,11 +75,26 @@ class Net(nn.Module):
             self._to_linear = x[0].shape[0]*x[0].shape[1]*x[0].shape[2]
         return x
 
+    def convs3d(self, x):
+        x = self.conv3d_layers(x)
+
+        if self._to_linear is None:
+            self._to_linear = x[0].shape[0]*x[0].shape[1]*x[0].shape[2]
+        return x
+
+
     def forward(self, x):
         x = self.convs(x)
         x = x.view(-1, self._to_linear)
         x = self.dense_layers(x)
         return x
+
+    def forward3d(self, x):
+        x = self.convs3d(x)
+        x = x.view(-1, self._to_linear)
+        x = self.dense_layers(x)
+        return x
+
 
 class Bezier(nn.Module):
     def __init__(self,HEIGHT,WIDTH,CHANNELS):
@@ -111,6 +147,7 @@ class Bezier(nn.Module):
         x = x.view(-1, self._to_linear)
         x = self.dense_layers(x)
         return x
+
 
 class trajectory(nn.Module):
     def __init__(self,HEIGHT,WIDTH,CHANNELS):
