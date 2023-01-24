@@ -105,7 +105,7 @@ def preprocess(data, save_path):
             shutil.rmtree(new_dir)
         os.mkdir(new_dir)
 
-        for msg in d:
+        for i, msg in enumerate(d):
             idxImg = int(msg[0])
 
         ## image load
@@ -130,7 +130,7 @@ def preprocess(data, save_path):
         # cv2.imwrite('/home/li/Documents/sensor_data/python_data/' + FILE_PREFIX + str(idxImg).zfill(5) + '_fisheye2_' + str(
         #     servo[idxsv][1])[5:10] + '.jpg',
         #             fisheye2_image)
-            cv2.imwrite(new_dir+'/'+str(idxImg).zfill(5)+'camera'+'.jpg', camera_image)
+            cv2.imwrite(new_dir+'/'+'camera'+str(idxImg).zfill(5)+'_'+str(msg[1])+'_'+str(i)+'.jpg', camera_image)
             # print('save to:', new_dir+'/'+str(idxImg).zfill(5)+'camera'+'.jpg')
 
         ## conbine data
