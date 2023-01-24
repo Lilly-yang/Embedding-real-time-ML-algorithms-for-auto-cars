@@ -92,7 +92,7 @@ def augmentation(img):
     return img
 
 
-def preprocess(data):
+def preprocess(data, save_path):
     final = []
 
     for ind, d in enumerate(data):
@@ -100,7 +100,7 @@ def preprocess(data):
         #     print('------%d / %d------'%(ind, len(data)))
         print('------%d / %d------'%(ind, len(data)))
 
-        new_dir = os.path.join('/root/catkin_ws/src/Embedding-real-time-ML-algorithms-for-auto-cars/data/IMREDD/processed/', str(ind))
+        new_dir = os.path.join(save_path, str(ind))
         if os.path.exists(new_dir):
             shutil.rmtree(new_dir)
         os.mkdir(new_dir)
@@ -131,7 +131,7 @@ def preprocess(data):
         #     servo[idxsv][1])[5:10] + '.jpg',
         #             fisheye2_image)
             cv2.imwrite(new_dir+'/'+str(idxImg).zfill(5)+'camera'+'.jpg', camera_image)
-            print('save to:', new_dir+'/'+str(idxImg).zfill(5)+'camera'+'.jpg')
+            # print('save to:', new_dir+'/'+str(idxImg).zfill(5)+'camera'+'.jpg')
 
         ## conbine data
         # output_1.append([np.array(fisheye1_image), np.array((float(steering_angle[idxmux][1]), float(speed[idxmux][1])))])
@@ -147,7 +147,8 @@ def preprocess(data):
 
 if __name__ == "__main__":
     PATH_TO_INPUT_BAG = '/root/catkin_ws/src/Embedding-real-time-ML-algorithms-for-auto-cars/data/IMREDD/rec1.bag'
-    FILE_PREFIX = 'fisheyes_steering_croped_one_hot_balanced_test'  # file name
+    # FILE_PREFIX = 'fisheyes_steering_croped_one_hot_balanced_test'  # file name
+    PATH_TO_SAVE = '/root/catkin_ws/src/Embedding-real-time-ML-algorithms-for-auto-cars/data/IMREDD/processed'
     topics = [#'/car/camera/fisheye1/image_raw',
             #   '/car/camera/fisheye2/image_raw',
               '/car/mux/ackermann_cmd_mux/output',
@@ -190,8 +191,8 @@ if __name__ == "__main__":
     idxmux = 0
     # idxstr_ang = 0
     # idxspd = 0
-    output_1 = []
-    output_2 = []
+    # output_1 = []
+    # output_2 = []
 
     trans = transfer_to_one_hot([-0.340000003576, 0.340000003576], 0.06)
 
@@ -253,7 +254,7 @@ if __name__ == "__main__":
     final_out = balance(trans.count, final_out)
     # final_out = np.concatenate(final_out, axis=0)
     print('image load and processing')
-    final_out = preprocess(final_out)
+    final_out = preprocess(final_out, PATH_TO_SAVE)
 
     ## concateneta data
     # final_out = np.array(final_out)
