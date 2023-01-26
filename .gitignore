@@ -7,3 +7,4 @@ src/training_testing/models
 *.npy
 *.pyc
 *.h5
+*.pth
